@@ -2,25 +2,14 @@
 
 App::import('Lib', 'QueryBuilder.QueryOptions');
 Mock::generate('Set');
-
-class __ActsAsQueryBuilder extends Object {
-}
-Mock::generate('__ActsAsQueryBuilder');
-
-class __MockBasicModel extends Mock__ActsAsQueryBuilder {
-    function once($method, $args, $return) {
-        $this->expectOnce($method, $args);
-        $this->setReturnValue($method, $return, $args);
-    }
-    
-}
+Mock::generate('Object', 'MockQueryBuilderForQueryMethodTest', array('getQueryOptions'));
 
 class QueryMethodTestCase extends CakeTestCase {
     var $model;
     var $query, $method, $args;
 
     function startTest() {
-        $this->model = new __MockBasicModel();
+        $this->model = new MockQueryBuilderForQueryMethodTest();
         $this->method = 'find';
         $this->args = array('all', 'custom', 'foo');
         $this->query = new QueryMethod($this->model, $this->method, $this->args);
@@ -139,6 +128,45 @@ class QueryMethodTestCase extends CakeTestCase {
 
         $this->assertIdentical(1, $a->invoke('extract', $extractParams[0]));
         $this->assertIdentical(2, $a->invoke('combine', $combineParams[0], $combineParams[1]));
+    }
+
+    function testImport() {
+        $this->_testImport(false);
+    }
+
+    function testImport_array() {
+        $this->_testImport(true);
+    }
+
+    function _testImport($useArray) {
+        list($a, $method, $args) = $this->defaultObj();
+        $imports = array('common' => array('limit' => 50,
+                                           'order' => 'id DESC',
+                                           'conditions' => 'id NOT NULL'),
+                         'approved' => array('conditions' => array('status' => 'approved'),
+                                             'limit' => 100));
+
+        // setup mock
+        $mock = $this->model;
+        $mock->expectCallCount('getQueryOptions', 2);
+        $cnt = 0;
+        foreach($imports as $k => $v) {
+            $mock->expectAt($cnt++, 'getQueryOptions', array($k));
+            $mock->setReturnValue('getQueryOptions', $v, array($k));
+        }
+
+        if($useArray) {
+            $this->assertIdentical($a, $a->import(array('common', 'approved')));
+        } else {
+            $this->assertIdentical($a, $a->import('common', 'approved'));
+        }
+
+        $this->assertIdentical($imports['approved']['limit'], $a->limit);
+        $this->assertIdentical($imports['common']['order'], $a->order);
+        $this->assertIdentical(am($imports['common']['conditions'],
+                                  $imports['approved']['conditions']),
+                               $a->conditions);
+
     }
 
 }

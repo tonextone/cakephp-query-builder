@@ -243,7 +243,7 @@ class QueryOptions extends Object {
  */
 class QueryMethod extends QueryOptions {
     /**
-     * @var object
+     * @var object  Model; acts as QueryBuilder
      */
     protected $_target;
 
@@ -348,6 +348,24 @@ class QueryMethod extends QueryOptions {
      */
     public function printArgs($func='pr') {
         call_user_func($func, $this->getAllArguments());
+        return $this;
+    }
+
+    /**
+     * Imports query options from the Model.
+     * 
+     * @param array
+     * @return object QueryMethod
+     */
+    public function import($arr) {
+        if(func_num_args() == 1 && is_array($arr)) {
+            $args = $arr;
+        } else {
+            $args = func_get_args();
+        }
+        foreach($args as $name) {
+            $this->importArray($this->_target->getQueryOptions($name));
+        }
         return $this;
     }
   
