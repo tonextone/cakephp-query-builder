@@ -370,3 +370,84 @@ class QueryMethod extends QueryOptions {
     }
   
 }
+
+/**
+ * SubqueryExpression class
+ *
+ * @package QueryBuilder
+ */
+class SubqueryExpression extends QueryOptions {
+
+    /**
+     * @var string
+     */
+    public $type = 'expression';
+
+    /**
+     * @var object  Model
+     */
+    protected $_model;
+
+    /**
+     * @var array
+     */
+    public $subqueryDefaults
+        = array('fields' => array(),
+                'table' => null,
+                'alias' => null,
+                'limit' => null,
+                'offset' => null,
+                'joins' => array(),
+                'conditions' => array(),
+                'order' => null,
+                'group' => null);
+
+    /**
+     * Constructor
+     * 
+     * @var object  Model
+     */
+    public function __construct($model) {
+        $this->_model = $model;
+    }
+
+    /**
+     * Sets table or alias depending on the first character of the name.
+     * 
+     * @param string
+     * @return object  SubqueryExpression
+     */
+    public function tableOrAlias($name) {
+        return preg_match('/^[a-z]/', $name) ?
+            $this->table($name) : $this->alias($name);
+    }
+
+    /**
+     * Returns string represention of the expression.
+     * 
+     * @return value
+     */
+    public function __toString() {
+        $dbo = $this->_model->getDataSource();
+        $options = am($this->subqueryDefaults, $this->_options);
+        $subQuery = $dbo->buildStatement($options, $this->_model);
+        return $subQuery;
+    }
+
+    /**
+     * Overridden __get; calls __toString if $key is 'value'.
+     * 
+     * @override
+     * @return mixed
+     */
+    public function &__get($key) {
+        if($key === 'value') {
+            $str = "(". $this->__toString() . ")";
+            return $str;
+        } else {
+            $ref =& parent::__get($key);
+            return $ref;
+        }
+    }
+}
+
