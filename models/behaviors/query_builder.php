@@ -57,6 +57,8 @@ class QueryBuilderBehavior extends ModelBehavior {
     }
 
     /**
+     * An 'Objectified' version of find method.
+     * 
      * <code>
      * $finder = $Model->finder('all')->fields(...)->conditions(...);
      * 
@@ -87,6 +89,25 @@ class QueryBuilderBehavior extends ModelBehavior {
      */
     public function createQueryMethod($model, $method, $args=array()) {
         return new QueryMethod($model, $method, $args);
+    }
+
+    /**
+     * Wrapper method for the Controller->paginate method.
+     * 
+     * @param object  Controller
+     * @param array   find-compatible options array
+     * @return mixed
+     */
+    public function execPaginate($model, $controller, $options=array()) {
+        $controller->paginate[$model->alias] = $options;
+        return $controller->paginate($model->alias);
+    }
+
+    /**
+     * An 'objectified' version of execPaginate method.
+     */
+    public function paginator($model, $controller) {
+        return $model->createQueryMethod('execPaginate', array($controller));
     }
 
 }

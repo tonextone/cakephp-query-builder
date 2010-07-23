@@ -2,6 +2,7 @@
 
 App::import('Behavior', 'QueryBuilder.QueryBuilder');
 Mock::generate('Model', 'MockActsAsQueryBuilder', array('createQueryMethod'));
+Mock::generate('Controller');
 Mock::generate('QueryMethod');
 
 class TestModelForQueryBuilderTestCase extends Model {
@@ -138,6 +139,71 @@ class QueryBuilderTestCase extends CakeTestCase {
                                $f2->conditions);
         $this->assertIdentical(100, $f2->limit);
         
+    }
+
+    function testExecPaginate() {
+        $c = new MockController();
+        $model = new TestModelForQueryBuilderTestCase();
+
+        $alias = $model->alias;
+        $options = array('limit' => 50,
+                         'order' => 'User.name ASC');
+
+        $c->expectOnce('paginate', array($alias));
+        $c->setReturnValue('paginate', array(1,2,3), array($alias));
+
+        $prevPaginateArr = $c->paginate;
+        $ret = $model->execPaginate($c, $options);
+        $afterPaginateArr = $c->paginate;
+
+        $this->assertIdentical(array(1,2,3), $ret);
+
+        $this->assertIdentical($afterPaginateArr,
+                               am($prevPaginateArr,
+                                  array($alias => $options)));
+    }
+
+    function testPaginator() {
+        $c = new MockController;
+        $returnObj = new stdClass;
+
+        $model = new MockActsAsQueryBuilder;
+        $model->expectOnce('createQueryMethod',
+                           array('execPaginate', array($c)));
+        $model->setReturnValue('createQueryMethod', $returnObj);
+
+        $finder = $this->f->paginator($model, $c);
+        $this->assertIdentical($returnObj, $finder);
+    }
+
+    function testPaginator_usingQueryMethod() {
+        $c = new MockController();
+        $model = new TestModelForQueryBuilderTestCase();
+
+        $alias = $model->alias;
+        $options = array('limit' => 50,
+                         'order' => 'User.name ASC',
+                         'conditions' => array('User.title like' => 'abc%'));
+
+        //setup Mock
+        $ret = array(1,2,3);
+        $c->expectOnce('paginate', array($alias));
+        $c->setReturnValue('paginate', $ret, array($alias));
+
+        //exec
+        $prevPaginateArr = $c->paginate;
+        $result = $model->paginator($c)
+            ->limit(50)
+            ->order('User.name ASC')
+            ->User_title('like', 'abc%')
+            ->invoke();
+        $afterPaginateArr = $c->paginate;
+
+        $this->assertIdentical(array(1,2,3), $ret);
+
+        $this->assertIdentical($afterPaginateArr,
+                               am($prevPaginateArr,
+                                  array($alias => $options)));
     }
 
 }
