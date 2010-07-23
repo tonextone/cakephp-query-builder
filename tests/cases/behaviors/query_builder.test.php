@@ -206,4 +206,54 @@ class QueryBuilderTestCase extends CakeTestCase {
                                   array($alias => $options)));
     }
 
+    function testSubquery() {
+        $model = new TestModelForQueryBuilderTestCase();
+
+        $q = $model->subquery();
+        $this->assertIsA($q, 'SubqueryExpression');
+        $this->assertNull($q->table);
+        $this->assertNull($q->alias);
+
+        $q = $model->subquery('users', 'User2');
+        $this->assertIsA($q, 'SubqueryExpression');
+        $this->assertIdentical('users', $q->table);
+        $this->assertIdentical('User2', $q->alias);
+
+        $q = $model->subquery('User2', 'users');
+        $this->assertIsA($q, 'SubqueryExpression');
+        $this->assertIdentical('users', $q->table);
+        $this->assertIdentical('User2', $q->alias);
+
+        $q = $model->subquery('User2', 'User');
+        $this->assertIsA($q, 'SubqueryExpression');
+        $this->assertNull($q->table);
+        $this->assertIdentical('User', $q->alias);
+
+        $q = $model->subquery('users', 'groups_users');
+        $this->assertIsA($q, 'SubqueryExpression');
+        $this->assertIdentical('groups_users', $q->table);
+        $this->assertNull($q->alias);
+
+        $q = $model->subquery('User');
+        $this->assertIsA($q, 'SubqueryExpression');
+        $this->assertNull($q->table);
+        $this->assertIdentical('User', $q->alias);
+
+        $q = $model->subquery(null, 'User');
+        $this->assertIsA($q, 'SubqueryExpression');
+        $this->assertNull($q->table);
+        $this->assertIdentical('User', $q->alias);
+
+        $q = $model->subquery('groups_users');
+        $this->assertIsA($q, 'SubqueryExpression');
+        $this->assertIdentical('groups_users', $q->table);
+        $this->assertNull($q->alias);
+
+        $q = $model->subquery(null, 'groups_users');
+        $this->assertIsA($q, 'SubqueryExpression');
+        $this->assertIdentical('groups_users', $q->table);
+        $this->assertNull($q->alias);
+
+    }
+
 }

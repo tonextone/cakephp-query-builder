@@ -110,5 +110,23 @@ class QueryBuilderBehavior extends ModelBehavior {
         return $model->createQueryMethod('execPaginate', array($controller));
     }
 
+    /**
+     * Creates a new SubqueryExpression object.
+     * 
+     * @param object  Model
+     * @param string  [optional] table name or alias
+     * @param string  [optional] table name or alias
+     * @return object  SubqueryExpression
+     */
+    public function subquery($model, $tableOrAlias=null, $tableOrAlias2=null) {
+        $exp = new SubqueryExpression($model);
+        if(is_string($tableOrAlias)) {
+            $exp->tableOrAlias($tableOrAlias);
+        }
+        if(is_string($tableOrAlias2)) {
+            $exp->tableOrAlias($tableOrAlias2);
+        }
+        return $exp;
+    }
 }
 
