@@ -1,8 +1,10 @@
 <?php
 /**
  * QueryBuilder Behavior
+ * providing a step-by-step interface to build find options.
  * 
  * <code>
+ * // objectified find
  * $Model->finder('all')
  *   ->fields('id', 'title')
  *   ->Model_group_id(100)
@@ -10,9 +12,23 @@
  *   ->order('created DESC')
  *   ->limit(10)
  *   ->invoke();
+ *
+ * // objectified paginate
+ * $Model->paginator($controller)
+ *   ->fields('id', 'title')
+ *   ->conditions('title IS NOT NULL')
+ *   ->order('id ASC', 'title ASC')
+ *   ->invoke();
+ * 
+ * // subquery object
+ * $q = $Model->subquery('users', 'User2')
+ *   ->fields('id')
+ *   ->User2_created('>' $time);
  * </code>
  * 
  * @package QueryBuilder
+ * @copyright Copyright 2010, Takayuki Miwa http://github.com/tkyk/
+ * @license http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
 App::import('Lib', 'QueryBuilder.QueryOptions');
@@ -105,6 +121,10 @@ class QueryBuilderBehavior extends ModelBehavior {
 
     /**
      * An 'objectified' version of execPaginate method.
+     * 
+     * @param object  Model
+     * @param object  Controller
+     * @return QueryMethod
      */
     public function paginator($model, $controller) {
         return $model->createQueryMethod('execPaginate', array($controller));

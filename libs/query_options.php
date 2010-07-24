@@ -17,6 +17,8 @@
  * </code>
  * 
  * @package QueryBuilder
+ * @copyright Copyright 2010, Takayuki Miwa http://github.com/tkyk/
+ * @license http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 class QueryOptions extends Object {
 
