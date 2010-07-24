@@ -176,6 +176,29 @@ class QueryBuilderTestCase extends CakeTestCase {
         $this->assertIdentical($returnObj, $finder);
     }
 
+    function testPaginator_queryOptions() {
+        $c = new MockController;
+        $returnObj = new MockQueryMethod;
+        $model = new MockActsAsQueryBuilder;
+
+        // setup Mocks
+        $model->queryOptions
+            = array('common' => array('limit' => 50,
+                                      'order' => 'id DESC',
+                                      'conditions' => 'id NOT NULL'),
+                    'approved' => array('conditions' => array('status' => 'approved'),
+                                        'limit' => 100));
+
+        $model->expectOnce('createQueryMethod',
+                           array('execPaginate', array($c)));
+        $model->setReturnValue('createQueryMethod', $returnObj);
+
+        $returnObj->expectOnce('import', array(array_keys($model->queryOptions)));
+
+        $finder = $this->f->paginator($model, $c, 'common', 'approved');
+        $this->assertIdentical($returnObj, $finder);
+    }
+
     function testPaginator_usingQueryMethod() {
         $c = new MockController();
         $model = new TestModelForQueryBuilderTestCase();

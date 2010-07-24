@@ -127,7 +127,12 @@ class QueryBuilderBehavior extends ModelBehavior {
      * @return QueryMethod
      */
     public function paginator($model, $controller) {
-        return $model->createQueryMethod('execPaginate', array($controller));
+        $paginator = $model->createQueryMethod('execPaginate', array($controller));
+        if(func_num_args() > 2) {
+            $args = func_get_args();
+            $paginator->import(array_slice($args, 2));
+        }
+        return $paginator;
     }
 
     /**
