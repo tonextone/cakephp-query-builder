@@ -32,7 +32,9 @@ class SubqueryExpressionTestCase extends CakeTestCase {
                          'fields' => 'User2.id',
                          'limit' => 10,
                          'conditions' => array('User2.status' => 'A'));
-        $expectedOptions = am($this->q->subqueryDefaults, $options);
+        $expectedOptions = am($this->q->subqueryDefaults,
+                              $options,
+                              array('fields' => array($options['fields'])));
 
         $sql = 'SELECT User2.id FROM users2 AS User2 ....';
 

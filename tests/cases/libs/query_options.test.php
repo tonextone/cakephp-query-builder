@@ -315,6 +315,10 @@ class QueryOptionsTestCase extends CakeTestCase {
         $this->assertEqual(array('fields'
                                  => array('a', 'b', 'c', 'd', 'e', 'f')),
                            $a->getOptions());
+
+        $a->clearOptions();
+        $this->assertEqual(array('fields' => array('a')),
+                           $a->fields('a')->getOptions());
         
     }
 

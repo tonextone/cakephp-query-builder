@@ -31,7 +31,6 @@ class QueryOptions extends Object {
      * @var array  key => unwrapArray
      */
     public $appendKeys = array('conditions' => true,
-                               'fields' => true,
                                'joins' => false);
 
     /**
@@ -162,6 +161,21 @@ class QueryOptions extends Object {
     public function importArray($arr) {
         foreach($arr as $k => $v) {
             $this->{$k}($v);
+        }
+        return $this;
+    }
+
+    /**
+     * Updates the 'fields' option
+     * ensuring that the 'fields' option is always an array.
+     * 
+     * @return object  QueryOptions
+     */
+    public function fields() {
+        $args = func_get_args();
+        $this->addOption('fields', $args, true);
+        if(!is_array($this->_options['fields'])) {
+            $this->_options['fields'] = array($this->_options['fields']);
         }
         return $this;
     }
