@@ -42,7 +42,7 @@ The similar methods `paginator` and `subquery` are for pagination and subqueries
       ->invoke();
     
      // subquery
-     $sql = $Model->subquery('users', 'User2')
+     $subqueryStr = $Model->subquery('users', 'User2')
        ->fields('User2.id')
        ->User2_deleted(null)
        ->__toString();

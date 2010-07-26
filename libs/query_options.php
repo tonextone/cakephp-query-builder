@@ -439,15 +439,24 @@ class SubqueryExpression extends QueryOptions {
     }
 
     /**
+     * Returns SQL represention of this expression.
+     * 
+     * @return string
+     */
+    public function toSql() {
+        $dbo = $this->_model->getDataSource();
+        $options = am($this->subqueryDefaults, $this->_options);
+        $sql = $dbo->buildStatement($options, $this->_model);
+        return $sql;        
+    }
+
+    /**
      * Returns string represention of the expression.
      * 
      * @return value
      */
     public function __toString() {
-        $dbo = $this->_model->getDataSource();
-        $options = am($this->subqueryDefaults, $this->_options);
-        $subQuery = $dbo->buildStatement($options, $this->_model);
-        return $subQuery;
+        return "(". $this->toSql() .")";
     }
 
     /**
@@ -458,7 +467,7 @@ class SubqueryExpression extends QueryOptions {
      */
     public function &__get($key) {
         if($key === 'value') {
-            $str = "(". $this->__toString() . ")";
+            $str = $this->__toString();
             return $str;
         } else {
             $ref =& parent::__get($key);

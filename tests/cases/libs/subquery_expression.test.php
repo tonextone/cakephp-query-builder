@@ -26,7 +26,7 @@ class SubqueryExpressionTestCase extends CakeTestCase {
         $this->assertEqual('expression', $this->q->type);
     }
 
-    function testToString() {
+    function test_toSql_toString_value() {
         $options = array('table' => 'users',
                          'alias' => 'User2',
                          'fields' => 'User2.id',
@@ -38,8 +38,8 @@ class SubqueryExpressionTestCase extends CakeTestCase {
 
         $sql = 'SELECT User2.id FROM users2 AS User2 ....';
 
-        $this->model->expectCallCount('getDataSource', 2);
-        $this->dbo->expectCallCount('buildStatement', 2);
+        $this->model->expectCallCount('getDataSource', 3);
+        $this->dbo->expectCallCount('buildStatement', 3);
         $this->dbo->setReturnValue('buildStatement', $sql);
         
         $this->dbo->expectAt(0, 'buildStatement',
@@ -56,9 +56,8 @@ class SubqueryExpressionTestCase extends CakeTestCase {
             ->limit(10)
             ->User2_status('A');
 
-        $this->assertEqual($sql, $this->q->__toString());
-
-        // value property calls __toString
+        $this->assertEqual($sql, $this->q->toSql());
+        $this->assertEqual("(". $sql .")", $this->q->__toString());
         $this->assertEqual("(". $sql .")", $this->q->value);
     }
 
