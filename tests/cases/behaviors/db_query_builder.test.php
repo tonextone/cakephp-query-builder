@@ -189,7 +189,7 @@ class DbQueryBuilderTestCase extends CakeTestCase {
             ->Category_name(array('PHP', 'Python'));
 
         $cnt = $P->finder('count')
-            ->conditions("Post.category_id IN ". $phpOrPython->value)
+            ->conditions("Post.category_id IN ". $phpOrPython)
             ->invoke();
         $this->assertEqual(3, $cnt);
 
@@ -205,7 +205,7 @@ class DbQueryBuilderTestCase extends CakeTestCase {
         
         $newerThanPHPPosts = $P->finder('all')
             ->Post_deleted(null)
-            ->conditions("Post.created > ALL ". $phpCreated->value)
+            ->conditions("Post.created > ALL ". $phpCreated)
             ->order('Post.title ASC')
             ->invoke('extract', '/Post/title');
 
@@ -218,8 +218,7 @@ class DbQueryBuilderTestCase extends CakeTestCase {
             ->conditions('EXISTS '.
                          $P->subquery('posts', 'Post')
                          ->fields('*')
-                         ->conditions('Post.category_id = Category.id')
-                         ->value)
+                         ->conditions('Post.category_id = Category.id'))
             ->order('Category.name ASC')
             ->invoke('extract', '/Category/name');
 
@@ -235,8 +234,8 @@ class DbQueryBuilderTestCase extends CakeTestCase {
             ->fields('COUNT(*) AS cnt_col')
             ->InnerQuery_deleted(null)
             ->group('InnerQuery.category_id')
-            ->value;
-        $ret = $C->query($query->__toString());
+            ->__toString();
+        $ret = $C->query($query->toSql());
 
         $this->assertEqual(array(array(0 => array('max_posts' => 2))),
                            $ret);
