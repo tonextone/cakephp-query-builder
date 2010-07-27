@@ -47,11 +47,15 @@ class DbQueryBuilderTestCase extends CakeTestCase {
     var $Post, $Category;
 
     function startTest() {
-        $this->Category = new TestCategoryForDbQueryBuilderTestCase(array('ds' => 'test_suite'));
-        ClassRegistry::addObject('Category', $this->Category);
+        $this->Category =
+            ClassRegistry::init(array('class' => 'TestCategoryForDbQueryBuilderTestCase',
+                                      'alias' => 'Category',
+                                      'type' => 'Model'));
 
-        $this->Post = new TestPostForDbQueryBuilderTestCase(array('ds' => 'test_suite'));
-        ClassRegistry::addObject('Post', $this->Post);
+        $this->Post = 
+            ClassRegistry::init(array('class' => 'TestPostForDbQueryBuilderTestCase',
+                                      'alias' => 'Post',
+                                      'type' => 'Model'));
     }
 
     function endTest() {
