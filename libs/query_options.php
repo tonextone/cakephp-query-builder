@@ -293,6 +293,35 @@ class QueryOptions extends Object {
 
 
 /**
+ * ScopedQueryOptions
+ * 
+ */
+class ScopedQueryOptions extends QueryOptions {
+
+    /**
+     * @var object  Object
+     */
+    protected $_scope;
+
+    /**
+     * @param object  Object
+     */
+    public function __construct($scope) {
+        $this->_scope = $scope;
+    }
+
+    /**
+     * @override
+     */
+    protected function _keyNotDefined($method, $args) {
+        array_unshift($args, $this);
+        $this->_scope->dispatchMethod($method, $args);
+        return $this;
+    }
+}
+
+
+/**
  * QueryMethod class
  * representing the 'find' method bound to the Model.
  * 
