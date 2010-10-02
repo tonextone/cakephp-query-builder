@@ -191,13 +191,32 @@ class QueryOptions extends Object {
 
     /**
      * Imports options from array
+     * Deprecated: use merge instead.
      * 
+     * @deprecated
+     * @see QueryOptions::merge
      * @param array
      * @return object QueryOptions
      */
     public function importArray($arr) {
-        foreach($arr as $k => $v) {
-            $this->{$k}($v);
+        return $this->merge($arr);
+    }
+
+    /**
+     * Merges other QueryOptions or arrays
+     *
+     * @param array or QueryOptions
+     * @return object QueryOptions
+     */
+    public function merge() {
+        $args = func_get_args();
+        foreach($args as $opts) {
+            if($opts instanceof QueryOptions) {
+                $opts = $opts->getOptions();
+            }
+            foreach($opts as $k => $v) {
+                $this->{$k}($v);
+            }
         }
         return $this;
     }
@@ -468,7 +487,9 @@ class QueryMethod extends ScopedQueryOptions {
 
     /**
      * Imports query options from the Model.
+     * Deprecated: use dynamic scoping instead.
      * 
+     * @deprecated
      * @param array
      * @return object QueryMethod
      */
@@ -479,7 +500,7 @@ class QueryMethod extends ScopedQueryOptions {
             $args = func_get_args();
         }
         foreach($args as $name) {
-            $this->importArray($this->_target->getQueryOptions($name));
+            $this->merge($this->_target->getQueryOptions($name));
         }
         return $this;
     }

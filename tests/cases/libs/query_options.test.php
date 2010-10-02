@@ -542,4 +542,40 @@ class QueryOptionsTestCase extends CakeTestCase {
         
     }
 
+    function testMerge() {
+        $a = $this->options;
+
+        $a->fields = array('a', 'b', 'c');
+        $a->group = "User.id";
+        $a->jointo = 'Post';
+        $a->conditions = array('User.id' => array(1,2,3));
+
+        $b = new QueryOptions();
+        $b->fields = array('d', 'e', 'f');
+        $b->limit = 100;
+        $b->conditions = array('Post.published_at IS NOT NULL',
+                               'Post.published_at <=' => '2010-01-01');
+
+        $c = array('limit' => 200,
+                   'order' => 'Post.updated DESC',
+                   'conditions' => array('User.active' => 1));
+
+        $beforeB = $b->getOptions();
+        $this->assertIdentical($a, $a->merge($b, $c));
+        $afterB = $b->getOptions();
+        $this->assertIdentical($beforeB, $afterB);
+
+        $this->assertIdentical(array('a', 'b', 'c', 'd', 'e', 'f'),
+                               $a->fields);
+        $this->assertIdentical('Post', $a->jointo);
+        $this->assertIdentical('User.id', $a->group);
+        $this->assertIdentical(200, $a->limit);
+        $this->assertIdentical(array('User.id' => array(1,2,3),
+                                     'Post.published_at IS NOT NULL',
+                                     'Post.published_at <=' => '2010-01-01',
+                                     'User.active' => 1),
+                               $a->conditions);
+        
+    }
+
 }
