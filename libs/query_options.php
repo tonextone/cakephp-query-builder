@@ -218,6 +218,13 @@ class QueryOptions extends Object {
     }
 
     /**
+     * @return string
+     */
+    public function getAlias() {
+        return "";
+    }
+
+    /**
      * __call; Magic method
      * 
      * @param string  method name
@@ -227,7 +234,11 @@ class QueryOptions extends Object {
     public function __call($method, $args) {
         switch(true) {
         case preg_match('/^([A-Z][a-zA-Z0-9]*)?_([a-zA-Z0-9_]+)$/', $method, $m):
-            $model = empty($m[1]) ? "" : $m[1] .".";
+            $alias = $m[1];
+            if($alias == 'Alias') {
+                $alias = strval($this->getAlias());
+            }
+            $model = empty($alias) ? "" : $alias .".";
             $field = $model . $m[2];
             return count($args) == 2 ? 
                 $this->addCondition($field, $args[0], $args[1]) :
@@ -385,6 +396,16 @@ class QueryMethod extends ScopedQueryOptions {
     public function getMethod() {
         return $this->_method;
     }
+
+    /**
+     * Returns model alias
+     * 
+     * @override
+     * @return string
+     */
+    public function getAlias() {
+        return $this->_target->alias;
+    }
     
     /**
      * @return object QueryMethod
@@ -516,6 +537,14 @@ class SubqueryExpression extends ScopedQueryOptions {
     public function tableOrAlias($name) {
         return preg_match('/^[a-z]/', $name) ?
             $this->table($name) : $this->alias($name);
+    }
+
+    /**
+     * @override
+     * @return string
+     */
+    public function getAlias() {
+        return isset($this->alias) ? $this->alias : "";
     }
 
     /**

@@ -35,6 +35,18 @@ class SubqueryExpressionTestCase extends CakeTestCase {
         $this->assertEqual('expression', $this->q->type);
     }
 
+    function testGetAlias() {
+        $q = $this->q;
+        $this->assertIdentical("", $q->getAlias());
+
+        $q->tableOrAlias('QueryName');
+        $this->assertIdentical('QueryName', $q->getAlias());
+
+        $q->Alias_id(3);
+        $this->assertIdentical(array('QueryName.id' => 3),
+                               $q->conditions);
+    }
+
     function test_toSql_toString_value() {
         $options = array('table' => 'users',
                          'alias' => 'User2',

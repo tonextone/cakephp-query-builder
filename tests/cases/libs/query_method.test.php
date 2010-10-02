@@ -10,6 +10,7 @@ class QueryMethodTestCase extends CakeTestCase {
 
     function startTest() {
         $this->model = new MockQueryBuilderForQueryMethodTest();
+        $this->model->alias = 'TestModel';
         $this->method = 'find';
         $this->args = array('all', 'custom', 'foo');
         $this->query = new QueryMethod($this->model, $this->method, $this->args);
@@ -27,6 +28,7 @@ class QueryMethodTestCase extends CakeTestCase {
         $this->assertIdentical($this->method, $this->query->getMethod());
         $this->assertIdentical($this->model, $this->query->getTarget());
         $this->assertIdentical($this->model, $this->query->getScope());
+        $this->assertIdentical($this->model->alias, $this->query->getAlias());
         $this->assertIdentical($this->args, $this->query->args);
     }
 
@@ -129,6 +131,13 @@ class QueryMethodTestCase extends CakeTestCase {
 
         $this->assertIdentical(1, $a->invoke('extract', $extractParams[0]));
         $this->assertIdentical(2, $a->invoke('combine', $combineParams[0], $combineParams[1]));
+    }
+
+    function testCallAlias() {
+        $this->query->Alias_id(3);
+        $this->assertEqual(array($this->model->alias .".id" => 3),
+                           $this->query->conditions);
+
     }
 
     function testImport() {

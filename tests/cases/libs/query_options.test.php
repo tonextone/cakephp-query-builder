@@ -382,6 +382,16 @@ class QueryOptionsTestCase extends CakeTestCase {
         $this->assertEqual($expected, $a->getOptions());
     }
 
+    function testGetAlias() {
+        $a = $this->options;
+
+        // always ""
+        $this->assertIdentical("", $a->getAlias());
+
+        $a->Alias_id(3);
+        $this->assertEqual(array('id' => 3), $a->conditions);
+    }
+
     function testIsKeyDefined_and_Call() {
         $a = $this->options;
 
