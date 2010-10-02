@@ -1,6 +1,7 @@
 <?php
 
 App::import('Lib', 'QueryBuilder.QueryOptions');
+Mock::generate('Object');
 
 class QueryOptionsTestCase extends CakeTestCase {
     var $options;
@@ -360,28 +361,49 @@ class QueryOptionsTestCase extends CakeTestCase {
         $this->assertEqual($expected, $a->getOptions());
     }
 
-    
-
     function testCall_SetOption() {
         $a = $this->options;
 
-        $a  ->limit(10)
-            ->order('id ASC', 'name DESC')
-            ->custom('id', 'name', 'title')
-            ->contain(array('User' => 'Group'));
+        $values = array('recursive' => true,
+                        'fields' => true,
+                        'order' => true,
+                        'group' => true,
+                        'limit' => true,
+                        'page' => true,
+                        'offset' => true,
+                        'callbacks' => true,
+                        'contain' => true,);
 
-        $expected = array('limit' => 10,
-                          'order' => array('id ASC', 'name DESC'),
-                          'custom' => array('id', 'name', 'title'),
-                          'contain' => array('User' => 'Group'));
-        $this->assertEqual($expected, $a->getOptions());
+        foreach($values as $k => $v) {
+            $this->assertIdentical($a, $a->{$k}($v));
+        }
 
-
-        $a->custom('abc', '(123)');
-        $expected['custom'] = array('abc', '(123)');
+        $expected = $values;
         $this->assertEqual($expected, $a->getOptions());
     }
 
+    function testIsKeyDefined_and_Call() {
+        $a = $this->options;
+
+        // predefined keys
+        $this->assertTrue($a->isKeyDefined('recursive'));
+        $a->recursive('a');
+        $this->assertIdentical('a', $a->recursive);
+
+        // custom keys
+        $this->assertFalse($a->isKeyDefined('custom'));
+        $this->assertIdentical($a, $a->custom('foo'));
+        $this->assertNull($a->custom);
+        //__get creates key
+        $this->assertTrue($a->isKeyDefined('custom'));
+
+        // 
+        $a->custom2 = 'foo';
+        $this->assertTrue($a->isKeyDefined('custom2'));
+        $this->assertIdentical('foo', $a->custom2);
+        $this->assertIdentical($a, $a->custom2('bar'));
+        $this->assertIdentical('bar', $a->custom2);
+    }
 
     function testCall_Condition() {
         $a = $this->options;

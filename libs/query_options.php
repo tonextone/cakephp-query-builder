@@ -34,6 +34,43 @@ class QueryOptions extends Object {
                                    'joins' => false);
 
     /**
+     * @var array  key => any
+     */
+    protected $_definedKeys
+        = array('recursive' => true,
+                'fields' => true,
+                'order' => true,
+                'group' => true,
+                'limit' => true,
+                'page' => true,
+                'offset' => true,
+                'callbacks' => true,
+                'contain' => true,);
+
+    /**
+     * Checks if given key is already defined.
+     * 
+     * @param string
+     * @return boolean
+     */
+    public function isKeyDefined($key) {
+        return array_key_exists($key, $this->_options)
+            || array_key_exists($key, $this->_definedKeys)
+            || array_key_exists($key, $this->_appendKeys);
+    }
+
+    /**
+     * Called from __call when the method is not a defined keys.
+     * 
+     * @param string  method name
+     * @param array   arguments to __call
+     * @return object
+     */
+    protected function _keyNotDefined($method, $args) {
+        return $this;
+    }
+
+    /**
      * Returns current options
      * 
      * @return array 
@@ -199,10 +236,14 @@ class QueryOptions extends Object {
         case preg_match('/^fields_([A-Z][a-zA-Z0-9]*)$/', $method, $m):
             return $this->modelFields($m[1], $args);
 
-        case isset($this->_appendKeys[$method]):
-            return $this->addOption($method, $args, $this->_appendKeys[$method]);
+        case $this->isKeyDefined($method):
+            if(isset($this->_appendKeys[$method])) {
+                return $this->addOption($method, $args, $this->_appendKeys[$method]);
+            } else {
+                return $this->setOption($method, $args);
+            }
         }
-        return $this->setOption($method, $args);
+        return $this->_keyNotDefined($method, $args);
     }
 
     /**
