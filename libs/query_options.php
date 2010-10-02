@@ -30,8 +30,8 @@ class QueryOptions extends Object {
     /**
      * @var array  key => unwrapArray
      */
-    public $appendKeys = array('conditions' => true,
-                               'joins' => false);
+    protected $_appendKeys = array('conditions' => true,
+                                   'joins' => false);
 
     /**
      * Returns current options
@@ -199,8 +199,8 @@ class QueryOptions extends Object {
         case preg_match('/^fields_([A-Z][a-zA-Z0-9]*)$/', $method, $m):
             return $this->modelFields($m[1], $args);
 
-        case isset($this->appendKeys[$method]):
-            return $this->addOption($method, $args, $this->appendKeys[$method]);
+        case isset($this->_appendKeys[$method]):
+            return $this->addOption($method, $args, $this->_appendKeys[$method]);
         }
         return $this->setOption($method, $args);
     }
