@@ -466,6 +466,7 @@ class SubqueryExpression extends QueryOptions {
      */
     public function __construct($model) {
         $this->_model = $model;
+        $this->_definedKeys = $this->subqueryDefaults;
     }
 
     /**
