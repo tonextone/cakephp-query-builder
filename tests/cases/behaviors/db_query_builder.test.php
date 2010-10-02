@@ -30,6 +30,18 @@ extends TestBaseModelForDbQueryBuilderTestCase {
         array('startsWithP' => array('conditions' => array('Category.name LIKE' => 'P%')),
               'flagOn' => array('conditions' => array('Category.flag' => 1)),
               'limit2' => array('limit' => 2));
+
+    function startsWith($f, $char) {
+        $f->Alias_name('like', "{$char}%");
+    }
+
+    function flagOn($f) {
+        $f->Alias_flag(1);
+    }
+
+    function limit2($f) {
+        $f->limit(2);
+    }
 }
 
 class TestPostForDbQueryBuilderTestCase
@@ -40,6 +52,10 @@ extends TestBaseModelForDbQueryBuilderTestCase {
 
     var $queryOptions =
         array('withCategory' => array('contain' => 'Category'));
+
+    function withCategory($f) {
+        $f->contain('Category');
+    }
 }
 
 class DbQueryBuilderTestCase extends CakeTestCase {
@@ -101,7 +117,7 @@ class DbQueryBuilderTestCase extends CakeTestCase {
         $ret = $C->finder('list')
             ->fields_Category('name', 'flag')
             ->addCondition('CHAR_LENGTH(name)', 4)
-            ->Category_flag(array(0,1))
+            ->Alias_flag(array(0,1))
             ->order('name DESC')
             ->invoke();
         $this->assertEqual(array('Ruby' => 1, 'Perl' => 0), $ret);
@@ -153,7 +169,7 @@ class DbQueryBuilderTestCase extends CakeTestCase {
 
 
         $ret = $C->paginator($cntl)
-            ->_flag(1)
+            ->Alias_flag(1)
             ->limit(3)
             ->order('name ASC')
             ->invoke('extract', '/Category/name');
@@ -178,7 +194,7 @@ class DbQueryBuilderTestCase extends CakeTestCase {
         // Schalar operand
         $phpCate = $C->subquery('categories', 'Category')
             ->fields('Category.id')
-            ->Category_name('PHP')
+            ->Alias_name('PHP')
             ->limit(1);
 
         $cnt = $P->finder('count')
@@ -190,7 +206,7 @@ class DbQueryBuilderTestCase extends CakeTestCase {
         // IN
         $phpOrPython = $C->subquery('categories', 'Category')
             ->fields('Category.id')
-            ->Category_name(array('PHP', 'Python'));
+            ->Alias_name(array('PHP', 'Python'));
 
         $cnt = $P->finder('count')
             ->conditions("Post.category_id IN ". $phpOrPython)
@@ -208,7 +224,7 @@ class DbQueryBuilderTestCase extends CakeTestCase {
             ->Category_name('PHP');
         
         $newerThanPHPPosts = $P->finder('all')
-            ->Post_deleted(null)
+            ->Alias_deleted(null)
             ->conditions("Post.created > ALL ". $phpCreated)
             ->order('Post.title ASC')
             ->invoke('extract', '/Post/title');
@@ -293,5 +309,59 @@ class DbQueryBuilderTestCase extends CakeTestCase {
         }
 
     }
+
+    function testScope() {
+        $C = $this->Category;
+        $P = $this->Post;
+
+        $this->_insertDefaultCategories();
+        $ids = $C->finder('list')->fields('name', 'id')->invoke();
+        $P->insert("title:PHP5.3 created:2010-02-01 category_id:{$ids['PHP']}",
+                   "title:Python3 created:2010-02-02 category_id:{$ids['Python']}");
+
+        // This causes a cakeError to prevent users from executing queries without enough conditions.
+        //$C->finder('all', 'no_such_option');
+
+        $ret = $C->finder('all')
+            ->startsWith('P')
+            ->order('name ASC')
+            ->invoke('extract', '/Category/name');
+        $this->assertEqual(array('Perl', 'PHP', 'Python'), $ret);
+
+        $ret = $C->finder('all')
+            ->startsWith('P')
+            ->flagOn()
+            ->order('name ASC')
+            ->invoke('extract', '/Category/name');
+        $this->assertEqual(array('PHP', 'Python'), $ret);
+
+        $ret = $C->finder('all')
+            ->startsWith('P')
+            ->order('name ASC')
+            ->limit2()
+            ->invoke('extract', '/Category/name');
+        $this->assertEqual(array('Perl', 'PHP'), $ret);
+
+        
+        $ret = $P->finder('all')->withCategory()->order('Post.created DESC')->invoke();
+        $expected = a(array('Category' => array('id' => $ids['Python'],
+                                                'name' => 'Python'),
+                            'Post' => array('title' => 'Python3',
+                                            'created' => '2010-02-02')),
+                      array('Category' => array('id' => $ids['PHP'],
+                                                'name' => 'PHP'),
+                            'Post' => array('title' => 'PHP5.3',
+                                            'created' => '2010-02-01'))
+                      );
+        foreach($expected as $i => $row) {
+            foreach($row as $model => $values) {
+                foreach($values as $k => $v) {
+                    $this->assertEqual($v, $ret[$i][$model][$k]);
+                }
+            }
+        }
+
+    }
+
 
 }
