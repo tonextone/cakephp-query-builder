@@ -5,6 +5,15 @@ App::import('Datasource', 'DboSource');
 Mock::generate('Model');
 Mock::generate('DboSource');
 
+class TestModelForSubqueryExpressionTestCase extends Model {
+    var $useTable = false;
+    var $actsAs = array('QueryBuilder.QueryBuilder');
+
+    function limitDouble($f, $num) {
+        $f->limit($num * 2);
+    }
+}
+
 class SubqueryExpressionTestCase extends CakeTestCase {
     var $model, $dbo;
     var $q;
@@ -80,6 +89,14 @@ class SubqueryExpressionTestCase extends CakeTestCase {
         $this->assertIdentical('GroupsUser', $q->alias);
 
         
+    }
+
+    function testScope() {
+        $m = new TestModelForSubqueryExpressionTestCase;
+        $q = new SubqueryExpression($m);
+
+        $this->assertIdentical($q, $q->limitDouble(100));
+        $this->assertIdentical(200, $q->limit);
     }
 
 }

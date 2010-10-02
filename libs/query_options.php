@@ -311,6 +311,13 @@ class ScopedQueryOptions extends QueryOptions {
     }
 
     /**
+     * @return object
+     */
+    public function getScope() {
+        return $this->_scope;
+    }
+
+    /**
      * @override
      */
     protected function _keyNotDefined($method, $args) {
@@ -327,7 +334,7 @@ class ScopedQueryOptions extends QueryOptions {
  * 
  * @package Finder
  */
-class QueryMethod extends QueryOptions {
+class QueryMethod extends ScopedQueryOptions {
     /**
      * @var object  Model; acts as QueryBuilder
      */
@@ -362,6 +369,7 @@ class QueryMethod extends QueryOptions {
         $this->_target = $target;
         $this->_method = $method;
         $this->args = $args;
+        parent::__construct($this->_target);
     }
 
     /**
@@ -462,7 +470,7 @@ class QueryMethod extends QueryOptions {
  *
  * @package QueryBuilder
  */
-class SubqueryExpression extends QueryOptions {
+class SubqueryExpression extends ScopedQueryOptions {
 
     /**
      * @var string
@@ -496,6 +504,7 @@ class SubqueryExpression extends QueryOptions {
     public function __construct($model) {
         $this->_model = $model;
         $this->_definedKeys = $this->subqueryDefaults;
+        parent::__construct($this->_model);
     }
 
     /**

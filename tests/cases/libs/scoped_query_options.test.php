@@ -22,6 +22,10 @@ class ScopedQueryOptionsTest extends CakeTestCase {
         $this->options = new ScopedQueryOptions($this->scope);
     }
 
+    function testGetScope() {
+        $this->assertIdentical($this->scope, $this->options->getScope());
+    }
+
     function testCall() {
         $a = $this->options;
 

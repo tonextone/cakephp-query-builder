@@ -26,6 +26,7 @@ class QueryMethodTestCase extends CakeTestCase {
     function testInit() {
         $this->assertIdentical($this->method, $this->query->getMethod());
         $this->assertIdentical($this->model, $this->query->getTarget());
+        $this->assertIdentical($this->model, $this->query->getScope());
         $this->assertIdentical($this->args, $this->query->args);
     }
 
