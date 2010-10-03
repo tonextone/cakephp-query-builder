@@ -1,6 +1,7 @@
 <?php
 
 App::import('Lib', 'QueryBuilder.QueryOptions');
+Mock::generate('Object');
 
 class QueryOptionsTestCase extends CakeTestCase {
     var $options;
@@ -360,28 +361,59 @@ class QueryOptionsTestCase extends CakeTestCase {
         $this->assertEqual($expected, $a->getOptions());
     }
 
-    
-
     function testCall_SetOption() {
         $a = $this->options;
 
-        $a  ->limit(10)
-            ->order('id ASC', 'name DESC')
-            ->custom('id', 'name', 'title')
-            ->contain(array('User' => 'Group'));
+        $values = array('recursive' => true,
+                        'fields' => true,
+                        'order' => true,
+                        'group' => true,
+                        'limit' => true,
+                        'page' => true,
+                        'offset' => true,
+                        'callbacks' => true,
+                        'contain' => true,);
 
-        $expected = array('limit' => 10,
-                          'order' => array('id ASC', 'name DESC'),
-                          'custom' => array('id', 'name', 'title'),
-                          'contain' => array('User' => 'Group'));
-        $this->assertEqual($expected, $a->getOptions());
+        foreach($values as $k => $v) {
+            $this->assertIdentical($a, $a->{$k}($v));
+        }
 
-
-        $a->custom('abc', '(123)');
-        $expected['custom'] = array('abc', '(123)');
+        $expected = $values;
         $this->assertEqual($expected, $a->getOptions());
     }
 
+    function testGetAlias() {
+        $a = $this->options;
+
+        // always ""
+        $this->assertIdentical("", $a->getAlias());
+
+        $a->Alias_id(3);
+        $this->assertEqual(array('id' => 3), $a->conditions);
+    }
+
+    function testIsKeyDefined_and_Call() {
+        $a = $this->options;
+
+        // predefined keys
+        $this->assertTrue($a->isKeyDefined('recursive'));
+        $a->recursive('a');
+        $this->assertIdentical('a', $a->recursive);
+
+        // custom keys
+        $this->assertFalse($a->isKeyDefined('custom'));
+        $this->assertIdentical($a, $a->custom('foo'));
+        $this->assertNull($a->custom);
+        //__get creates key
+        $this->assertTrue($a->isKeyDefined('custom'));
+
+        // 
+        $a->custom2 = 'foo';
+        $this->assertTrue($a->isKeyDefined('custom2'));
+        $this->assertIdentical('foo', $a->custom2);
+        $this->assertIdentical($a, $a->custom2('bar'));
+        $this->assertIdentical('bar', $a->custom2);
+    }
 
     function testCall_Condition() {
         $a = $this->options;
@@ -507,6 +539,42 @@ class QueryOptionsTestCase extends CakeTestCase {
         $conditions['id >'] = 3;
         $expected = compact('fields', 'limit', 'conditions');
         $this->assertEqual($expected, $a->getOptions());
+        
+    }
+
+    function testMerge() {
+        $a = $this->options;
+
+        $a->fields = array('a', 'b', 'c');
+        $a->group = "User.id";
+        $a->jointo = 'Post';
+        $a->conditions = array('User.id' => array(1,2,3));
+
+        $b = new QueryOptions();
+        $b->fields = array('d', 'e', 'f');
+        $b->limit = 100;
+        $b->conditions = array('Post.published_at IS NOT NULL',
+                               'Post.published_at <=' => '2010-01-01');
+
+        $c = array('limit' => 200,
+                   'order' => 'Post.updated DESC',
+                   'conditions' => array('User.active' => 1));
+
+        $beforeB = $b->getOptions();
+        $this->assertIdentical($a, $a->merge($b, $c));
+        $afterB = $b->getOptions();
+        $this->assertIdentical($beforeB, $afterB);
+
+        $this->assertIdentical(array('a', 'b', 'c', 'd', 'e', 'f'),
+                               $a->fields);
+        $this->assertIdentical('Post', $a->jointo);
+        $this->assertIdentical('User.id', $a->group);
+        $this->assertIdentical(200, $a->limit);
+        $this->assertIdentical(array('User.id' => array(1,2,3),
+                                     'Post.published_at IS NOT NULL',
+                                     'Post.published_at <=' => '2010-01-01',
+                                     'User.active' => 1),
+                               $a->conditions);
         
     }
 

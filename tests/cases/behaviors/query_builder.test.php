@@ -14,6 +14,22 @@ class TestModelForQueryBuilderTestCase extends Model {
                 'normal_order' => array('order' => 'created ASC'),
                 'approved' => array('conditions'
                                     => array('status' => 'approved')));
+
+    function limitDouble($f, $num) {
+        $f->limit($num * 2);
+    }
+
+    function sortInCreatedAsc($f) {
+        $f->order('created ASC');
+    }
+
+    function approved($f) {
+        $f->_status('approved');
+    }
+
+    function combined($f) {
+        $f->limitDouble(50)->sortInCreatedAsc()->approved();
+    }
 }
 
 class QueryBuilderTestCase extends CakeTestCase {
@@ -141,6 +157,29 @@ class QueryBuilderTestCase extends CakeTestCase {
         
     }
 
+    function testScope() {
+        $model = new TestModelForQueryBuilderTestCase();
+
+        $f = $model->finder('all')
+            ->limitDouble(50)
+            ->sortInCreatedAsc()
+            ->approved()
+            ->fields('id', 'title');
+
+        $this->assertIsA($f, 'QueryMethod');
+        $this->assertIdentical($model, $f->getScope());
+        $this->assertIdentical(array('all'), $f->args);
+        $this->assertIdentical(array('id', 'title'), $f->fields);
+        $this->assertIdentical(100, $f->limit);
+        $this->assertIdentical('created ASC', $f->order);
+        $this->assertIdentical(array('status' => 'approved'),
+                               $f->conditions);
+
+        $f2 = $model->finder('all')->combined()->fields('id', 'title');
+        $this->assertEqual($f->getOptions(), $f2->getOptions());
+    }
+
+
     function testExecPaginate() {
         $c = new MockController();
         $model = new TestModelForQueryBuilderTestCase();
@@ -215,11 +254,13 @@ class QueryBuilderTestCase extends CakeTestCase {
 
         //exec
         $prevPaginateArr = $c->paginate;
-        $result = $model->paginator($c)
+        $p = $model->paginator($c)
             ->limit(50)
             ->order('User.name ASC')
-            ->User_title('like', 'abc%')
-            ->invoke();
+            ->User_title('like', 'abc%');
+        $this->assertIdentical($model, $p->getTarget());
+        $this->assertIdentical($model, $p->getScope());
+        $result = $p->invoke();
         $afterPaginateArr = $c->paginate;
 
         $this->assertIdentical(array(1,2,3), $ret);

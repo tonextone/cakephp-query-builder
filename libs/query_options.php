@@ -30,8 +30,45 @@ class QueryOptions extends Object {
     /**
      * @var array  key => unwrapArray
      */
-    public $appendKeys = array('conditions' => true,
-                               'joins' => false);
+    protected $_appendKeys = array('conditions' => true,
+                                   'joins' => false);
+
+    /**
+     * @var array  key => any
+     */
+    protected $_definedKeys
+        = array('recursive' => true,
+                'fields' => true,
+                'order' => true,
+                'group' => true,
+                'limit' => true,
+                'page' => true,
+                'offset' => true,
+                'callbacks' => true,
+                'contain' => true,);
+
+    /**
+     * Checks if given key is already defined.
+     * 
+     * @param string
+     * @return boolean
+     */
+    public function isKeyDefined($key) {
+        return array_key_exists($key, $this->_options)
+            || array_key_exists($key, $this->_definedKeys)
+            || array_key_exists($key, $this->_appendKeys);
+    }
+
+    /**
+     * Called from __call when the method is not a defined keys.
+     * 
+     * @param string  method name
+     * @param array   arguments to __call
+     * @return object
+     */
+    protected function _keyNotDefined($method, $args) {
+        return $this;
+    }
 
     /**
      * Returns current options
@@ -154,13 +191,32 @@ class QueryOptions extends Object {
 
     /**
      * Imports options from array
+     * Deprecated: use merge instead.
      * 
+     * @deprecated
+     * @see QueryOptions::merge
      * @param array
      * @return object QueryOptions
      */
     public function importArray($arr) {
-        foreach($arr as $k => $v) {
-            $this->{$k}($v);
+        return $this->merge($arr);
+    }
+
+    /**
+     * Merges other QueryOptions or arrays
+     *
+     * @param array or QueryOptions
+     * @return object QueryOptions
+     */
+    public function merge() {
+        $args = func_get_args();
+        foreach($args as $opts) {
+            if($opts instanceof QueryOptions) {
+                $opts = $opts->getOptions();
+            }
+            foreach($opts as $k => $v) {
+                $this->{$k}($v);
+            }
         }
         return $this;
     }
@@ -181,6 +237,13 @@ class QueryOptions extends Object {
     }
 
     /**
+     * @return string
+     */
+    public function getAlias() {
+        return "";
+    }
+
+    /**
      * __call; Magic method
      * 
      * @param string  method name
@@ -190,7 +253,11 @@ class QueryOptions extends Object {
     public function __call($method, $args) {
         switch(true) {
         case preg_match('/^([A-Z][a-zA-Z0-9]*)?_([a-zA-Z0-9_]+)$/', $method, $m):
-            $model = empty($m[1]) ? "" : $m[1] .".";
+            $alias = $m[1];
+            if($alias == 'Alias') {
+                $alias = strval($this->getAlias());
+            }
+            $model = empty($alias) ? "" : $alias .".";
             $field = $model . $m[2];
             return count($args) == 2 ? 
                 $this->addCondition($field, $args[0], $args[1]) :
@@ -199,10 +266,14 @@ class QueryOptions extends Object {
         case preg_match('/^fields_([A-Z][a-zA-Z0-9]*)$/', $method, $m):
             return $this->modelFields($m[1], $args);
 
-        case isset($this->appendKeys[$method]):
-            return $this->addOption($method, $args, $this->appendKeys[$method]);
+        case $this->isKeyDefined($method):
+            if(isset($this->_appendKeys[$method])) {
+                return $this->addOption($method, $args, $this->_appendKeys[$method]);
+            } else {
+                return $this->setOption($method, $args);
+            }
         }
-        return $this->setOption($method, $args);
+        return $this->_keyNotDefined($method, $args);
     }
 
     /**
@@ -252,12 +323,48 @@ class QueryOptions extends Object {
 
 
 /**
+ * ScopedQueryOptions
+ * 
+ */
+class ScopedQueryOptions extends QueryOptions {
+
+    /**
+     * @var object  Object
+     */
+    protected $_scope;
+
+    /**
+     * @param object  Object
+     */
+    public function __construct($scope) {
+        $this->_scope = $scope;
+    }
+
+    /**
+     * @return object
+     */
+    public function getScope() {
+        return $this->_scope;
+    }
+
+    /**
+     * @override
+     */
+    protected function _keyNotDefined($method, $args) {
+        array_unshift($args, $this);
+        $this->_scope->dispatchMethod($method, $args);
+        return $this;
+    }
+}
+
+
+/**
  * QueryMethod class
  * representing the 'find' method bound to the Model.
  * 
  * @package Finder
  */
-class QueryMethod extends QueryOptions {
+class QueryMethod extends ScopedQueryOptions {
     /**
      * @var object  Model; acts as QueryBuilder
      */
@@ -292,6 +399,7 @@ class QueryMethod extends QueryOptions {
         $this->_target = $target;
         $this->_method = $method;
         $this->args = $args;
+        parent::__construct($this->_target);
     }
 
     /**
@@ -306,6 +414,16 @@ class QueryMethod extends QueryOptions {
      */
     public function getMethod() {
         return $this->_method;
+    }
+
+    /**
+     * Returns model alias
+     * 
+     * @override
+     * @return string
+     */
+    public function getAlias() {
+        return $this->_target->alias;
     }
     
     /**
@@ -369,7 +487,9 @@ class QueryMethod extends QueryOptions {
 
     /**
      * Imports query options from the Model.
+     * Deprecated: use dynamic scoping instead.
      * 
+     * @deprecated
      * @param array
      * @return object QueryMethod
      */
@@ -380,7 +500,7 @@ class QueryMethod extends QueryOptions {
             $args = func_get_args();
         }
         foreach($args as $name) {
-            $this->importArray($this->_target->getQueryOptions($name));
+            $this->merge($this->_target->getQueryOptions($name));
         }
         return $this;
     }
@@ -392,7 +512,7 @@ class QueryMethod extends QueryOptions {
  *
  * @package QueryBuilder
  */
-class SubqueryExpression extends QueryOptions {
+class SubqueryExpression extends ScopedQueryOptions {
 
     /**
      * @var string
@@ -425,6 +545,8 @@ class SubqueryExpression extends QueryOptions {
      */
     public function __construct($model) {
         $this->_model = $model;
+        $this->_definedKeys = $this->subqueryDefaults;
+        parent::__construct($this->_model);
     }
 
     /**
@@ -436,6 +558,14 @@ class SubqueryExpression extends QueryOptions {
     public function tableOrAlias($name) {
         return preg_match('/^[a-z]/', $name) ?
             $this->table($name) : $this->alias($name);
+    }
+
+    /**
+     * @override
+     * @return string
+     */
+    public function getAlias() {
+        return isset($this->alias) ? $this->alias : "";
     }
 
     /**
